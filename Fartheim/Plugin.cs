@@ -19,7 +19,7 @@ namespace Fartheim
 	[BepInPlugin("pfhoenix.fartheim", Plugin.ModName, Plugin.Version)]
 	public class Plugin : BaseUnityPlugin
 	{
-		public const string Version = "1.1";
+		public const string Version = "1.2";
 		public const string ModName = "Fartheim";
 		Harmony _Harmony;
 		public static ManualLogSource Log;
@@ -33,6 +33,7 @@ namespace Fartheim
 		public static ConfigEntry<float> FartNoiseRange;
 		public static ConfigEntry<bool> BunsOfSteel;
 		public static ConfigEntry<bool> ShouldBirdsFart;
+		public static ConfigEntry<bool> OnlyPlayers;
 
 		private void Awake()
 		{
@@ -59,6 +60,7 @@ namespace Fartheim
 			FartNoiseRange = Config.Bind("Farts", "Fart Noise Range", 32f);
 			BunsOfSteel = Config.Bind("Farts", "Players Only Fart When Crouching", true);
 			ShouldBirdsFart = Config.Bind("Farts", "Should Birds Fart", true);
+			OnlyPlayers = Config.Bind("Farts", "Only Players Fart (unrealistic)", false);
 
 			_Harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), null);
 		}

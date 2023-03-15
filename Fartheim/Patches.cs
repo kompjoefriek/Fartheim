@@ -168,7 +168,7 @@ namespace Fartheim
 		[HarmonyPatch("Awake")]
 		public static void AwakePostfix(Character __instance)
 		{
-			__instance.gameObject.AddComponent<Farter>();
+			if (!Plugin.OnlyPlayers.Value || __instance is Player) __instance.gameObject.AddComponent<Farter>();
 		}
 	}
 

@@ -1,0 +1,9 @@
+{
+    "name": "Fartheim",
+    "version_number": "1.2.0",
+    "website_url": "",
+    "description": "Farts. It's farts. Everything that could fart, farts. Some things that shouldn't fart, fart.",
+    "dependencies": [
+		"denikson-BepInExPack_Valheim-5.4.2100"
+	]
+}
