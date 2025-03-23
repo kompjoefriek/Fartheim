@@ -16,15 +16,15 @@ namespace Fartheim
 	 * 
 	 */
 
-	[BepInPlugin("pfhoenix.fartheim", Plugin.ModName, Plugin.Version)]
+	[BepInPlugin("kompjoefriek.fartheim", Plugin.ModName, Plugin.Version)]
 	public class Plugin : BaseUnityPlugin
 	{
-		public const string Version = "1.2.1";
+		public const string Version = "1.3.0";
 		public const string ModName = "Fartheim";
-		Harmony _Harmony;
+		Harmony _harmony;
 		public static ManualLogSource Log;
 
-		AssetBundle AB;
+		AssetBundle _assetBundle;
 		public static List<AudioClip> DryFarts = new List<AudioClip>();
 		public static List<AudioClip> WetFarts = new List<AudioClip>();
 		public static GameObject FartSystemPrefab;
@@ -41,10 +41,10 @@ namespace Fartheim
 			Log = Logger;
 #else
 			Log = new ManualLogSource(null);
-#endif
+#endif // DEBUG
 
-			AB = AssetHelper.LoadAssetBundle("fartheim");
-			var farts = AB.LoadAllAssets<AudioClip>();
+			_assetBundle = AssetHelper.LoadAssetBundle("fartheim");
+			var farts = _assetBundle.LoadAllAssets<AudioClip>();
 			foreach (var f in farts)
 			{
 				if (f.name.Contains("water")) WetFarts.Add(f);
@@ -53,7 +53,7 @@ namespace Fartheim
 			if (DryFarts.Count > 0) DryFarts = DryFarts.OrderBy(f => f.length).ToList();
 			if (WetFarts.Count > 0) WetFarts = WetFarts.OrderBy(f => f.length).ToList();
 
-			FartSystemPrefab = AB.LoadAsset<GameObject>("Assets\\FartSystem.prefab");
+			FartSystemPrefab = _assetBundle.LoadAsset<GameObject>("Assets\\FartSystem.prefab");
 			AssetHelper.RegisterPrefab(FartSystemPrefab);
 
 			MaxFartTime = Config.Bind("Farts", "Maximum Fart Time", 30f);
@@ -62,12 +62,12 @@ namespace Fartheim
 			ShouldBirdsFart = Config.Bind("Farts", "Should Birds Fart", true);
 			OnlyPlayers = Config.Bind("Farts", "Only Players Fart (unrealistic)", false);
 
-			_Harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), null);
+			_harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), null);
 		}
 
 		private void OnDestroy()
 		{
-			if (_Harmony != null) _Harmony.UnpatchSelf();
+			_harmony?.UnpatchSelf();
 		}
 	}
 }

@@ -1,13 +1,17 @@
-## 1.2.1
+# Changelog
+## v1.3.0
+* todo
+
+## v1.2.1
 * Fixes for Ashlands
 
-## 1.2
+## v1.2.0
 * Added option for only players to fart. Defaults to false.
 
-## 1.1
+## v1.1.0
 * Made farts modify their pitch based on creature size
 * Added new configuration setting - Player Only Farts When Crouching, defaults to true
 * Fixed draugr fart location
 
-## 1.0
+## v1.0.0
 * Farts

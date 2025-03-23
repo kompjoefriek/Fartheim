@@ -20,8 +20,10 @@ namespace Fartheim
 			{
 				string[] vals = def.Split(':');
 				if (vals.Length < 2) return null;
-				RequirementStub rs = new RequirementStub();
-				rs.Component = vals[0];
+				RequirementStub rs = new RequirementStub
+				{
+					Component = vals[0]
+				};
 				int.TryParse(vals[1], out rs.Amount);
 				if (vals.Length > 2) int.TryParse(vals[2], out rs.AmountPerLevel);
 
@@ -40,8 +42,8 @@ namespace Fartheim
 	public static class AssetHelper
 	{
 		public static readonly List<GameObject> Prefabs = new List<GameObject>();
-		static readonly List<RecipeStub> RecipeStubs = new List<RecipeStub>();
-		static readonly List<KeyValuePair<string, StatusEffect>> StatusEffects = new List<KeyValuePair<string, StatusEffect>>();
+		static readonly List<RecipeStub> _recipeStubs = new List<RecipeStub>();
+		static readonly List<KeyValuePair<string, StatusEffect>> _statusEffects = new List<KeyValuePair<string, StatusEffect>>();
 
 		public static AssetBundle LoadAssetBundle(string name)
 		{
@@ -50,7 +52,7 @@ namespace Fartheim
 #if DEBUG
 			foreach (var s in assembly.GetManifestResourceNames()) Plugin.Log.LogInfo("Resource: " + s);
 			foreach (var s in ab.GetAllAssetNames()) Plugin.Log.LogInfo("Asset in bundle: " + s);
-#endif
+#endif // DEBUG
 
 			return ab;
 		}
@@ -63,17 +65,17 @@ namespace Fartheim
 
 		public static void RegisterRecipe(RecipeStub rs)
 		{
-			RecipeStubs.Add(rs);
+			_recipeStubs.Add(rs);
 		}
 
 		public static void RegisterStatusEffect<T>(string name) where T : StatusEffect
 		{
-			StatusEffects.Add(new KeyValuePair<string, StatusEffect>(name, ScriptableObject.CreateInstance<T>()));
+			_statusEffects.Add(new KeyValuePair<string, StatusEffect>(name, ScriptableObject.CreateInstance<T>()));
 		}
 
 		public static RecipeStub GetRecipeStub(string itemName)
 		{
-			return RecipeStubs.Find(r => r.Item.name == itemName);
+			return _recipeStubs.Find(r => r.Item.name == itemName);
 		}
 
 		public static Recipe BuildRecipe(RecipeStub rs, ObjectDB odb)
@@ -114,11 +116,13 @@ namespace Fartheim
 					Plugin.Log.LogInfo("BuildRecipe couldn't get requirement component " + r.Component + " for " + rs.Name);
 					return null;
 				}
-				Piece.Requirement pr = new Piece.Requirement();
-				pr.m_resItem = id;
-				pr.m_amount = r.Amount;
-				pr.m_amountPerLevel = r.AmountPerLevel;
-				pr.m_recover = r.Recoverable;
+				Piece.Requirement pr = new Piece.Requirement
+				{
+					m_resItem = id,
+					m_amount = r.Amount,
+					m_amountPerLevel = r.AmountPerLevel,
+					m_recover = r.Recoverable
+				};
 				reqs.Add(pr);
 			}
 			recipe.m_resources = reqs.ToArray();
@@ -136,9 +140,9 @@ namespace Fartheim
 				Traverse.Create(odb).Method("UpdateRegisters").GetValue();
 			}
 
-			if (RecipeStubs.Count > 0 && !odb.GetRecipe(RecipeStubs[0].Item.m_itemData))
+			if (_recipeStubs.Count > 0 && !odb.GetRecipe(_recipeStubs[0].Item.m_itemData))
 			{
-				foreach (var rs in RecipeStubs)
+				foreach (var rs in _recipeStubs)
 				{
 					Recipe r = BuildRecipe(rs, odb);
 					if (r)
@@ -149,9 +153,9 @@ namespace Fartheim
 				}
 			}
 
-			if (StatusEffects.Count > 0 && !odb.GetStatusEffect(StatusEffects[0].Key.GetStableHashCode()))
+			if (_statusEffects.Count > 0 && !odb.GetStatusEffect(_statusEffects[0].Key.GetStableHashCode()))
 			{
-				foreach (var se in StatusEffects)
+				foreach (var se in _statusEffects)
 				{
 					odb.m_StatusEffects.Add(se.Value);
 				}
@@ -160,7 +164,7 @@ namespace Fartheim
 
 		public static void UpdateRecipes()
 		{
-			foreach (var rs in RecipeStubs)
+			foreach (var rs in _recipeStubs)
 			{
 				Recipe r = BuildRecipe(rs, ObjectDB.instance);
 				if (r)

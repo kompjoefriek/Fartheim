@@ -8,27 +8,27 @@ namespace Fartheim
 {
 	public class Farter : MonoBehaviour
 	{
-		static string[] BoneRoots = new string[] { "Hip", "Hips", "l_hip" };
-		AudioSource AS;
-		Character Char;
-		bool Crouching;
+		private static string[] BoneRoots = new string[] { "Hip", "Hips", "l_hip" };
+		AudioSource _audioSource;
+		Character _character;
+		bool _isCrouching;
 		float TimeSinceLastFart;
 		float FartTimerDelay;
-		ParticleSystem PS;
+		ParticleSystem _particleSystem;
 		float SizeScalar = 1;
 
 		public void Awake()
 		{
-			Char = GetComponentInChildren<Character>();
-			AS = gameObject.AddComponent<AudioSource>();
-			AS.playOnAwake = false;
-			AS.maxDistance = Plugin.FartNoiseRange.Value;
-			AS.rolloffMode = AudioRolloffMode.Linear;
-			AS.spatialBlend = 1f;
-			AS.outputAudioMixerGroup = Traverse.Create(typeof(AudioMan)).Field<AudioMan>("m_instance").Value.m_ambientMixer;
+			_character = GetComponentInChildren<Character>();
+			_audioSource = gameObject.AddComponent<AudioSource>();
+			_audioSource.playOnAwake = false;
+			_audioSource.maxDistance = Plugin.FartNoiseRange.Value;
+			_audioSource.rolloffMode = AudioRolloffMode.Linear;
+			_audioSource.spatialBlend = 1f;
+			_audioSource.outputAudioMixerGroup = Traverse.Create(typeof(AudioMan)).Field<AudioMan>("m_instance").Value.m_ambientMixer;
 
 			Transform psparent = null;
-			if (Char)
+			if (_character)
 			{
 				if (!gameObject.name.StartsWith("Skeleton") && !gameObject.name.StartsWith("Blob"))
 				{
@@ -59,7 +59,7 @@ namespace Fartheim
 
 			if (!psparent) psparent = transform;
 			GameObject go = GameObject.Instantiate(Plugin.FartSystemPrefab, psparent);
-			PS = go.GetComponent<ParticleSystem>();
+			_particleSystem = go.GetComponent<ParticleSystem>();
 
 			CapsuleCollider cc = gameObject.GetComponentInChildren<CapsuleCollider>();
 			if (cc)
@@ -85,37 +85,37 @@ namespace Fartheim
 
 			if (SizeScalar != 1f)
 			{
-				var main = PS.main;
+				var main = _particleSystem.main;
 				main.startSpeedMultiplier = SizeScalar;
 				main.startSizeMultiplier = SizeScalar;
-				var vol = PS.velocityOverLifetime;
+				var vol = _particleSystem.velocityOverLifetime;
 				vol.speedModifierMultiplier = SizeScalar;
 			}
 		}
 
 		void Fart()
 		{
-			List<AudioClip> acs = (Char && Char.InWater()) ? Plugin.WetFarts : Plugin.DryFarts;
+			List<AudioClip> acs = (_character && _character.InWater()) ? Plugin.WetFarts : Plugin.DryFarts;
 			int index;
-			if (Char && Char.IsPlayer() && Plugin.BunsOfSteel.Value) index = Mathf.Min(acs.Count - 1, (int)(TimeSinceLastFart / Plugin.MaxFartTime.Value * acs.Count));
+			if (_character && _character.IsPlayer() && Plugin.BunsOfSteel.Value) index = Mathf.Min(acs.Count - 1, (int)(TimeSinceLastFart / Plugin.MaxFartTime.Value * acs.Count));
 			else index = Mathf.Min(acs.Count - 1, (int)(UnityEngine.Random.value * acs.Count));
 			AudioClip ac = acs[index];
-			AS.pitch = (0.75f + UnityEngine.Random.value * 0.5f) / SizeScalar;
-			AS.PlayOneShot(ac, Mathf.Clamp(TimeSinceLastFart / Plugin.MaxFartTime.Value, 0.25f, 1f));
+			_audioSource.pitch = (0.75f + UnityEngine.Random.value * 0.5f) / SizeScalar;
+			_audioSource.PlayOneShot(ac, Mathf.Clamp(TimeSinceLastFart / Plugin.MaxFartTime.Value, 0.25f, 1f));
 			FartTimerDelay = ac.length + 1f + UnityEngine.Random.value;
 			TimeSinceLastFart = 0;
 
-			PS.transform.rotation = Quaternion.LookRotation(-transform.forward, transform.up);
-			var main = PS.main;
+			_particleSystem.transform.rotation = Quaternion.LookRotation(-transform.forward, transform.up);
+			var main = _particleSystem.main;
 			main.duration = ac.length;
-			PS.Play();
+			_particleSystem.Play();
 		}
 
 		public void Update()
 		{
 			if (!Player.m_localPlayer) return;
 
-			if (!Char || !Char.IsPlayer() || !Plugin.BunsOfSteel.Value)
+			if (!_character || !_character.IsPlayer() || !Plugin.BunsOfSteel.Value)
 			{
 				if (FartTimerDelay <= 0)
 				{
@@ -132,21 +132,21 @@ namespace Fartheim
 			}
 			else TimeSinceLastFart += Time.deltaTime;
 
-			if (Char && Char.IsCrouching())
+			if (_character && _character.IsCrouching())
 			{
-				if (!Crouching)
+				if (!_isCrouching)
 				{
 					// crouching squeezes one out
-					Crouching = true;
+					_isCrouching = true;
 					Fart();
 				}
 			}
-			else if (Crouching) Crouching = false;
+			else if (_isCrouching) _isCrouching = false;
 
-			if (PS)
+			if (_particleSystem)
 			{
-				var fol = PS.forceOverLifetime;
-				if (Char && (Char.InInterior() || (Char.IsPlayer() && (Char as Player).InShelter())))
+				var fol = _particleSystem.forceOverLifetime;
+				if (_character && (_character.InInterior() || (_character.IsPlayer() && (_character as Player).InShelter())))
 				{
 					fol.x = 0;
 					fol.z = 0;
