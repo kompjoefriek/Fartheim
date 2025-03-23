@@ -19,7 +19,7 @@ namespace Fartheim
 	[BepInPlugin("pfhoenix.fartheim", Plugin.ModName, Plugin.Version)]
 	public class Plugin : BaseUnityPlugin
 	{
-		public const string Version = "1.2";
+		public const string Version = "1.2.1";
 		public const string ModName = "Fartheim";
 		Harmony _Harmony;
 		public static ManualLogSource Log;

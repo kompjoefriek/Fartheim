@@ -133,7 +133,7 @@ namespace Fartheim
 				foreach (var p in Prefabs)
 					if (p.GetComponentInChildren<ItemDrop>(true)) odb.m_items.Add(p);
 
-				odb.UpdateItemHashes();
+				Traverse.Create(odb).Method("UpdateRegisters").GetValue();
 			}
 
 			if (RecipeStubs.Count > 0 && !odb.GetRecipe(RecipeStubs[0].Item.m_itemData))
@@ -149,7 +149,7 @@ namespace Fartheim
 				}
 			}
 
-			if (StatusEffects.Count > 0 && !odb.GetStatusEffect(StatusEffects[0].Key))
+			if (StatusEffects.Count > 0 && !odb.GetStatusEffect(StatusEffects[0].Key.GetStableHashCode()))
 			{
 				foreach (var se in StatusEffects)
 				{
@@ -193,8 +193,10 @@ namespace Fartheim
 		{
 			if (Prefabs.Count == 0) return;
 
+			var namedPrefabs = Traverse.Create(__instance).Field<Dictionary<int, GameObject>>("m_namedPrefabs").Value;
+
 			foreach (var p in Prefabs)
-				__instance.m_namedPrefabs[p.name.GetStableHashCode()] = p;
+				namedPrefabs[p.name.GetStableHashCode()] = p;
 		}
 
 		/*[HarmonyPatch(typeof(UnityEngine.Object), "Destroy", new Type[] { typeof(UnityEngine.Object) })]

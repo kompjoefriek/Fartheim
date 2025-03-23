@@ -1,3 +1,6 @@
+## 1.2.1
+* Fixes for Ashlands
+
 ## 1.2
 * Added option for only players to fart. Defaults to false.
 

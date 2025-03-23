@@ -25,7 +25,7 @@ namespace Fartheim
 			AS.maxDistance = Plugin.FartNoiseRange.Value;
 			AS.rolloffMode = AudioRolloffMode.Linear;
 			AS.spatialBlend = 1f;
-			AS.outputAudioMixerGroup = AudioMan.m_instance.m_ambientMixer;
+			AS.outputAudioMixerGroup = Traverse.Create(typeof(AudioMan)).Field<AudioMan>("m_instance").Value.m_ambientMixer;
 
 			Transform psparent = null;
 			if (Char)
@@ -176,7 +176,7 @@ namespace Fartheim
 	public class RandomFlyingBirdPatches
 	{
 		[HarmonyPostfix]
-		[HarmonyPatch("Start")]
+		[HarmonyPatch("Awake")]
 		public static void StartPostfix(RandomFlyingBird __instance)
 		{
 			if (Plugin.ShouldBirdsFart.Value) __instance.gameObject.AddComponent<Farter>();
