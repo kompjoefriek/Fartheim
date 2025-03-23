@@ -43,7 +43,7 @@ namespace Fartheim
 			Log = new ManualLogSource(null);
 #endif // DEBUG
 
-			_assetBundle = AssetHelper.LoadAssetBundle("fartheim");
+			_assetBundle = AssetHelper.LoadAssetBundle("resources.fartheim");
 			var farts = _assetBundle.LoadAllAssets<AudioClip>();
 			foreach (var f in farts)
 			{
