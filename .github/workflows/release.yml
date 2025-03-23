@@ -1,0 +1,155 @@
+# Build .NET project, Package project and create Github release with the package attached
+
+name: Release
+
+on: 
+  push:
+    tags:
+    - '*'
+
+env:
+  MOD_NAME: Fartheim
+  PACKAGE_NAME: Fartheim_${{ github.ref_name }}.zip
+
+jobs:
+  build_release:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Read manifest thunderstore
+      id: manifest-thunderstore
+      uses: ActionsTools/read-json-action@main
+      with:
+        file_path: "thunderstore/manifest.json"
+      
+    - name: Get version manifest thunderstore
+      run: |
+        manifest_version=v${{ steps.manifest-thunderstore.outputs.version_number }}
+        echo "Manifest version = $manifest_version"
+        echo "MANIFEST_VERSION=$manifest_version" >> $GITHUB_ENV
+
+    - name: Get version project
+      run: |
+        project_version=v$(cat ${{ env.MOD_NAME }}.csproj | grep -Po '(?<=Version>)[\d\.]+(?=</Version>)')
+        echo "Project version = $project_version"
+        echo "PROJECT_VERSION=$project_version" >> $GITHUB_ENV
+
+    - name: Check version manifest thunderstore
+      if: ${{ github.ref_name != env.MANIFEST_VERSION }}
+      run: | 
+        echo "Manifest version does not match tag version! ${{ github.ref_name }} != ${{ env.MANIFEST_VERSION }}"
+        exit 1
+
+    - name: Version check project
+      if: ${{ github.ref_name != env.PROJECT_VERSION }}
+      run: | 
+        echo "Project version does not match tag version! ${{ github.ref_name }} != ${{ env.PROJECT_VERSION }}"
+        exit 1
+
+    - name: Extract Changelog
+      id: changelog
+      uses: nickohold/changelog-version-extractor@v1.0.0
+      with:
+        version_prefix: "## "
+        version: "${{ github.ref_name }}"
+        changelog_path: "./CHANGELOG.md"
+
+    - name: Print Changelog
+      run: echo "Changes:\n${{ steps.changelog.outputs.changelog }}"
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+        cache: true
+
+    - name: Restore dependencies
+      run: dotnet restore --locked-mode
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Prepare for package
+      run: |
+        rm package -r -f
+        mkdir package
+        cp README.md package/
+        cp CHANGELOG.md package/
+        cp thunderstore/manifest.json package/
+        cp thunderstore/icon.png package/
+        cp bin/Release/net48/${{ env.MOD_NAME }}.dll package/
+
+    - name: Create package
+      run: |
+        cd ./package
+        zip -9 ${{ env.PACKAGE_NAME }} *.*
+        cd ./
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.PACKAGE_NAME }}
+        path: package/${{ env.PACKAGE_NAME }}
+        retention-days: 5
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+        body: "Changes:\n${{ steps.changelog.outputs.changelog }}"
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: package/${{ env.PACKAGE_NAME }}
+        asset_name: ${{ env.PACKAGE_NAME }}
+        asset_content_type: application/zip
+
+    - name: Post Package
+      run: |
+        rm package -r -f
+
+  deploy_thunderstore:
+    needs: build_release
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+
+    - name: Download the release artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.PACKAGE_NAME }}
+
+    - uses: GreenTF/upload-thunderstore-package@v4.3
+      with:
+        namespace: KompjoeFriek # the thunderstore 'team' to publish under
+        token: ${{ secrets.THUNDERSTORE_TOKEN }}
+        name: ${{ env.MOD_NAME }} # the name of the package
+        version: ${{ github.ref_name }} # Use the tag as the package version
+        file: ${{ env.PACKAGE_NAME }}
+        community: valheim
+        repo: valheim.thunderstore.io
+        categories: | # <-- notice this pipe character
+          mods
+          client-side
+          utility
+          ashlands-update
